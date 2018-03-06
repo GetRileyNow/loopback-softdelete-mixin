@@ -26,6 +26,8 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false, index = false, 
   if (deletedById) Model.defineProperty('deletedById', { type: Number, required: false, default: null });
   if (deleteOp) Model.defineProperty('deleteOp', { type: String, required: false, default: null });
 
+  var destroyAll = Model.destroyAll;
+
   Model.destroyAll = function softDestroyAll(where, cb) {
     var deletePromise = index ? Model.updateAll(where, { ...scrubbed, [deletedAt]: new Date(), deleteIndex: genKey() }) :
       Model.updateAll(where, { ...scrubbed, [deletedAt]: new Date() });
@@ -37,6 +39,10 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false, index = false, 
 
   Model.remove = Model.destroyAll;
   Model.deleteAll = Model.destroyAll;
+
+  Model.hardRemove = destroyAll;
+  Model.hardDeleteAll = destroyAll;
+  Model.hardDestroyAll = destroyAll;
 
   var hardDestroyById = Model.destroyById;
 
