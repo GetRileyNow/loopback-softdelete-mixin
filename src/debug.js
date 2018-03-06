@@ -1,3 +1,3 @@
-import debug from 'debug';
+var debug = require('debug');
 
-export default (name = 'soft-delete') => debug(`loopback:mixins:${name}`);
+module.exports = (name = 'soft-delete') => debug(`loopback:mixins:${name}`);
