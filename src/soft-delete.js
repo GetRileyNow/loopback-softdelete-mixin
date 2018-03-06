@@ -26,7 +26,7 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false, index = false, 
   if (deletedById) Model.defineProperty('deletedById', { type: Number, required: false, default: null });
   if (deleteOp) Model.defineProperty('deleteOp', { type: String, required: false, default: null });
 
-  var destroyAll = Model.destroyAll;
+  var _destroyAll = Model.destroyAll;
 
   Model.destroyAll = function softDestroyAll(where, cb) {
     var deletePromise = index ? Model.updateAll(where, { ...scrubbed, [deletedAt]: new Date(), deleteIndex: genKey() }) :
@@ -40,11 +40,9 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false, index = false, 
   Model.remove = Model.destroyAll;
   Model.deleteAll = Model.destroyAll;
 
-  Model.hardRemove = destroyAll;
-  Model.hardDeleteAll = destroyAll;
-  Model.hardDestroyAll = destroyAll;
-
-  var hardDestroyById = Model.destroyById;
+  Model.hardDestroyAll = function hardDestroyAll(where, cb) {
+    return _destroyAll.call(Model, where, cb);
+  };
 
   Model.destroyById = function softDestroyById(id, cb) {
     var deletePromise = index ? Model.updateAll({ [idName]: id }, { ...scrubbed, [deletedAt]: new Date(), deleteIndex: genKey() }) :
@@ -57,10 +55,6 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false, index = false, 
 
   Model.removeById = Model.destroyById;
   Model.deleteById = Model.destroyById;
-
-  Model.hardDestroyById = hardDestroyById;
-  Model.hardRemoveById = Model.hardDestroyById;
-  Model.deleteById = Model.hardDestroyById;
 
   Model.prototype.destroy = function softDestroy(options, cb) {
     const callback = (cb === undefined && typeof options === 'function') ? options : cb;
