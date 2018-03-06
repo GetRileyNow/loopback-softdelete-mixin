@@ -20,7 +20,7 @@ var _keys = require('babel-runtime/core-js/object/keys');
 
 var _keys2 = _interopRequireDefault(_keys);
 
-var _debug2 = require('./debug');
+var _debug2 = require('./src/debug');
 
 var _debug3 = _interopRequireDefault(_debug2);
 
@@ -32,15 +32,15 @@ var debug = (0, _debug3.default)();
 
 exports.default = function (Model, _ref) {
   var _ref$deletedAt = _ref.deletedAt,
-      deletedAt = _ref$deletedAt === undefined ? 'deletedAt' : _ref$deletedAt,
-      _ref$scrub = _ref.scrub,
-      scrub = _ref$scrub === undefined ? false : _ref$scrub,
-      _ref$index = _ref.index,
-      index = _ref$index === undefined ? false : _ref$index,
-      _ref$deletedById = _ref.deletedById,
-      deletedById = _ref$deletedById === undefined ? false : _ref$deletedById,
-      _ref$deleteOp = _ref.deleteOp,
-      deleteOp = _ref$deleteOp === undefined ? false : _ref$deleteOp;
+    deletedAt = _ref$deletedAt === undefined ? 'deletedAt' : _ref$deletedAt,
+    _ref$scrub = _ref.scrub,
+    scrub = _ref$scrub === undefined ? false : _ref$scrub,
+    _ref$index = _ref.index,
+    index = _ref$index === undefined ? false : _ref$index,
+    _ref$deletedById = _ref.deletedById,
+    deletedById = _ref$deletedById === undefined ? false : _ref$deletedById,
+    _ref$deleteOp = _ref.deleteOp,
+    deleteOp = _ref$deleteOp === undefined ? false : _ref$deleteOp;
 
   debug('SoftDelete mixin for Model %s', Model.modelName);
 
