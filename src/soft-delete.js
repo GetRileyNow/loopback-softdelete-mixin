@@ -3,7 +3,7 @@ var crypto = require('crypto');
 import _debug from './debug';
 const debug = _debug();
 
-export default (Model, { deletedAt = 'deletedAt', scrub = false , index = false, deletedById = false, deleteOp = false}) => {
+export default (Model, { deletedAt = 'deletedAt', scrub = false, index = false, deletedById = false, deleteOp = false }) => {
   debug('SoftDelete mixin for Model %s', Model.modelName);
 
   debug('options', { deletedAt, scrub, index });
@@ -21,15 +21,15 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false , index = false,
     scrubbed = propertiesToScrub.reduce((obj, prop) => ({ ...obj, [prop]: null }), {});
   }
 
-  Model.defineProperty(deletedAt, {type: Date, required: false, default: null});
+  Model.defineProperty(deletedAt, { type: Date, required: false, default: null });
   if (index) Model.defineProperty('deleteIndex', { type: String, required: true, default: 'null' });
   if (deletedById) Model.defineProperty('deletedById', { type: Number, required: false, default: null });
   if (deleteOp) Model.defineProperty('deleteOp', { type: String, required: false, default: null });
 
   Model.destroyAll = function softDestroyAll(where, cb) {
     var deletePromise = index ? Model.updateAll(where, { ...scrubbed, [deletedAt]: new Date(), deleteIndex: genKey() }) :
-      Model.updateAll(where, { ...scrubbed, [deletedAt]: new Date() })
-    
+      Model.updateAll(where, { ...scrubbed, [deletedAt]: new Date() });
+
     return deletePromise
       .then(result => (typeof cb === 'function') ? cb(null, result) : result)
       .catch(error => (typeof cb === 'function') ? cb(error) : Promise.reject(error));
@@ -37,6 +37,8 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false , index = false,
 
   Model.remove = Model.destroyAll;
   Model.deleteAll = Model.destroyAll;
+
+  var hardDestroyById = Model.destroyById;
 
   Model.destroyById = function softDestroyById(id, cb) {
     var deletePromise = index ? Model.updateAll({ [idName]: id }, { ...scrubbed, [deletedAt]: new Date(), deleteIndex: genKey() }) :
@@ -50,10 +52,14 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false , index = false,
   Model.removeById = Model.destroyById;
   Model.deleteById = Model.destroyById;
 
+  Model.hardDestroyById = hardDestroyById;
+  Model.hardRemoveById = Model.hardDestroyById;
+  Model.deleteById = Model.hardDestroyById;
+
   Model.prototype.destroy = function softDestroy(options, cb) {
     const callback = (cb === undefined && typeof options === 'function') ? options : cb;
     let data = {
-      ...scrubbed, 
+      ...scrubbed,
       [deletedAt]: new Date()
     };
     options = options || {};
@@ -61,7 +67,7 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false , index = false,
     if (index) data.deleteIndex = genKey();
     if (deletedById && options.deletedById) data.deletedById = options.deletedById;
     if (deleteOp && options.deleteOp) data.deleteOp = options.deleteOp;
-    
+
     return this.updateAttributes(data, options)
       .then(result => (typeof cb === 'function') ? callback(null, result) : result)
       .catch(error => (typeof cb === 'function') ? callback(error) : Promise.reject(error));
@@ -71,7 +77,7 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false , index = false,
   Model.prototype.delete = Model.prototype.destroy;
 
   // Emulate default scope but with more flexibility.
-  const queryNonDeleted = {[deletedAt]: null};
+  const queryNonDeleted = { [deletedAt]: null };
 
   const _findOrCreate = Model.findOrCreate;
   Model.findOrCreate = function findOrCreateDeleted(query = {}, ...rest) {
@@ -79,7 +85,7 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false , index = false,
       if (!query.where || Object.keys(query.where).length === 0) {
         query.where = queryNonDeleted;
       } else {
-        query.where = { and: [ query.where, queryNonDeleted ] };
+        query.where = { and: [query.where, queryNonDeleted] };
       }
     }
 
@@ -92,7 +98,7 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false , index = false,
       if (!query.where || Object.keys(query.where).length === 0) {
         query.where = queryNonDeleted;
       } else {
-        query.where = { and: [ query.where, queryNonDeleted ] };
+        query.where = { and: [query.where, queryNonDeleted] };
       }
     }
 
@@ -106,7 +112,7 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false , index = false,
     if (!where || Object.keys(where).length === 0) {
       whereNotDeleted = queryNonDeleted;
     } else {
-      whereNotDeleted = { and: [ where, queryNonDeleted ] };
+      whereNotDeleted = { and: [where, queryNonDeleted] };
     }
     return _count.call(Model, whereNotDeleted, ...rest);
   };
@@ -118,7 +124,7 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false , index = false,
     if (!where || Object.keys(where).length === 0) {
       whereNotDeleted = queryNonDeleted;
     } else {
-      whereNotDeleted = { and: [ where, queryNonDeleted ] };
+      whereNotDeleted = { and: [where, queryNonDeleted] };
     }
     return _update.call(Model, whereNotDeleted, ...rest);
   };
@@ -132,16 +138,16 @@ export default (Model, { deletedAt = 'deletedAt', scrub = false , index = false,
       accepts: [
         { arg: 'options', type: 'object', http: 'optionsFromRequest' }
       ],
-      returns: {arg: 'data', type: 'object', root: true},
-      http: {verb: 'delete', path: '/'},
+      returns: { arg: 'data', type: 'object', root: true },
+      http: { verb: 'delete', path: '/' },
     });
 
     Model.prototype.deleteById = function(options = {}) {
       if (deletedById) options.deletedById = options.accessToken ? options.accessToken.userId : null;
       if (deleteOp && options.deletedById) options.deleteOp = 'user';
       return this.destroy(options).then(function() {
-        return { count: 1 }
-      })
+        return { count: 1 };
+      });
     };
   }
 };
